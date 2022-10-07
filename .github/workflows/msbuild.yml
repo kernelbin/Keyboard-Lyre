@@ -45,5 +45,5 @@ jobs:
       with:
         name: artifacts
         path: |
-          .\Release\Keyboard Lyre.exe.exe
-          .\x64\Release\Keyboard Lyre.exe.exe
+          .\Release\Keyboard Lyre.exe
+          .\x64\Release\Keyboard Lyre.exe
