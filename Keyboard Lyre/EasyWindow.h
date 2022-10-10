@@ -63,6 +63,9 @@ EXTERN_C_START
 #define EZWM_KEYUP         25 // Posted to the window with the keyboard focus when a nonsystem key is released (simplly forwarding WM_KEYUP).
 #define EZWM_CHAR          26 // Posted to the window with the keyboard focus when a character code is translated (simplly forwarding WM_CHAR).
 
+
+#define EZWM_COMMAND       27
+
 // For EZWM_NCHITTEST.
 #define EZHT_DEFAULT     0
 #define EZHT_CLIENT      1

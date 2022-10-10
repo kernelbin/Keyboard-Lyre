@@ -59,6 +59,14 @@ typedef struct
     int row, col;
 } BUTTON_DATA, * PBUTTON_DATA;
 
+typedef struct
+{
+    int ResID;
+    ID2D1Bitmap* pBitmap;
+    BOOL bPressed;
+} PIC_BUTTON_DATA, *PPIC_BUTTON_DATA;
+
+
 static void AudioCallback(void* data, Uint8* stream, int len)
 {
     // Render the audio samples in float format
@@ -472,6 +480,56 @@ VOID ButtonPressed(int col, int row, int offset)
     //ReleaseSRWLockExclusive(&tsfLock);
 }
 
+LRESULT CALLBACK PictureButtonProc(EZWND ezWnd, UINT message, WPARAM wParam, LPARAM lParam)
+{
+    PPIC_BUTTON_DATA pButtonData = (PPIC_BUTTON_DATA)EZGetExtra(ezWnd);
+    switch (message)
+    {
+    case EZWM_CREATE:
+        pButtonData = (PPIC_BUTTON_DATA)EZSetCbExtra(ezWnd, sizeof(PIC_BUTTON_DATA));
+        if (!pButtonData) return -1;
+        pButtonData->ResID = lParam;
+        break;
+    case EZWM_RENDER:
+    {
+        PDRAW_TARGET pDT = (PDRAW_TARGET)wParam;
+        if (!pButtonData->pBitmap)
+            LoadResourceBitmap(pDT->pRT, pWICFactory, MAKEINTRESOURCE(pButtonData->ResID), L"PNG", 0, 0, &pButtonData->pBitmap);
+
+        D2D1_SIZE_F Size = pButtonData->pBitmap->GetSize();
+        pDT->pRT->DrawBitmap(pButtonData->pBitmap, { 0, 0, ezWnd->cWidth, ezWnd->cHeight }, pButtonData->bPressed ? 0.5f : 0.9f, D2D1_BITMAP_INTERPOLATION_MODE_LINEAR, { 0,0,Size.width, Size.height });
+        break;
+    }
+    case EZWM_LBUTTONDOWN:
+    {
+        pButtonData->bPressed = TRUE;                               
+        break;
+    }
+    case EZWM_LBUTTONUP:
+    {
+        if (pButtonData->bPressed)
+        {
+            EZSendMessage(ezWnd->ParentWnd, EZWM_COMMAND, 0, (LPARAM)ezWnd);
+            pButtonData->bPressed = FALSE;
+        }
+        break;
+    }
+    case EZWM_MOUSELEAVE:
+    {
+        pButtonData->bPressed = FALSE;
+        break;
+    }
+    case EZWM_DISCARD_RES:
+        if (pButtonData->pBitmap)
+        {
+            pButtonData->pBitmap->Release();
+            pButtonData->pBitmap = NULL;
+        }
+        break;
+    }
+    return 0;
+}
+
 LRESULT CALLBACK SharpFlatButtonProc(EZWND ezWnd, UINT message, WPARAM wParam, LPARAM lParam)
 {
     PBUTTON_DATA pButtonData = (PBUTTON_DATA)EZGetExtra(ezWnd);
@@ -669,6 +727,7 @@ LRESULT CALLBACK MainWindowProc(EZWND ezWnd, UINT message, WPARAM wParam, LPARAM
       'Z', 'X', 'C', 'V', 'B', 'N', 'M' };
 
     static ID2D1Bitmap* pBitmap = NULL;
+    static EZWND TutorialButton;
 
     switch (message)
     {
@@ -699,6 +758,22 @@ LRESULT CALLBACK MainWindowProc(EZWND ezWnd, UINT message, WPARAM wParam, LPARAM
         SharpButton = CreateEZWnd(
             ezWnd, 0, 0, 0, 0,
             SharpFlatButtonProc, 1);
+
+        TutorialButton = CreateEZWnd(
+            ezWnd, 0, 0, 0, 0,
+            PictureButtonProc, IDB_PNG2);
+
+        break;
+    }
+    case EZWM_COMMAND:
+    {
+        if ((EZWND)lParam == TutorialButton)
+        {
+            MessageBoxW(0,
+                L"按键盘 [Q-U] [A-J] [Z-M] 键或用鼠标点击按钮来弹奏音乐\n"
+                L"按下键盘 - + 键或按下 [♭] [♯] 按钮来弹奏升降音",
+                szAppName, MB_DEFAULT_DESKTOP_ONLY | MB_ICONINFORMATION);
+        }
         break;
     }
     case EZWM_SIZE:
@@ -726,6 +801,10 @@ LRESULT CALLBACK MainWindowProc(EZWND ezWnd, UINT message, WPARAM wParam, LPARAM
         EZMoveWnd(SharpButton, xStart + 7 * (NoteButtonHeight + ButtonSpace) + (SharpFlatBtnHeight + ButtonSpace * 0.8) + NoteButtonHeight / 2.0f - SharpFlatBtnHeight,
             yStart + NoteButtonHeight / 2.0f - SharpFlatBtnHeight,
             SharpFlatBtnHeight * 2, SharpFlatBtnHeight * 2);
+
+        float TutorialButtonHeight = 0.035 * ezWnd->cHeight;
+
+        EZMoveWnd(TutorialButton, TutorialButtonHeight * 2, TutorialButtonHeight, TutorialButtonHeight, TutorialButtonHeight);
         break;
     }
     case EZWM_RENDER:
@@ -957,13 +1036,16 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
     EZWND ezWnd = CreateEZRootWnd(
         HWND_DESKTOP,
         0,
-        WS_OVERLAPPEDWINDOW | WS_VISIBLE,
+        WS_OVERLAPPEDWINDOW,
         szAppName,
         100,
         100,
         900,
         550,
         MainWindowProc, NULL);
+
+    ShowWindow(ezWnd->hwndBase, SW_MAXIMIZE);
+    UpdateWindow(ezWnd->hwndBase);
 
     if (!ezWnd) return 1;
 

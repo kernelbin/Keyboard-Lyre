@@ -68,6 +68,8 @@ IDR_FONT1               FONT                    "GenshinFont1.ttf"
 
 IDB_PNG1                PNG                     "background.png"
 
+IDB_PNG2                PNG                     "tutorial.png"
+
 #endif    // 中文(简体，中国) resources
 /////////////////////////////////////////////////////////////////////////////
 
