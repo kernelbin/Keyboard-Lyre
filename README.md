@@ -2,6 +2,9 @@
 
 A key-board lyre inspired from a anime game with several functional improvements.
 
+## Screenshot
+![image](https://user-images.githubusercontent.com/25586021/197822881-86fa1f06-5530-400a-8e61-47baef98fc59.png)
+
 ## Features
 
 - You can play music using it, same sound.
